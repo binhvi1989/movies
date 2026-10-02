@@ -1,8 +1,9 @@
 # Năm Anh Em Nhà Mình
 
-Phim hoạt hình ngắn (~3 phút) cho trẻ em về tình anh em trong gia đình, có thuyết minh tiếng Việt
-và phụ đề. Toàn bộ hình ảnh, chuyển động, nhạc nền và hiệu ứng âm thanh được dựng bằng mã nguồn
-trong thư mục này (Python + Pillow + ffmpeg), giọng đọc tạo offline bằng mô hình Piper VITS.
+Phim hoạt hình ngắn (~3 phút) cho trẻ em về tình anh em trong gia đình, có người dẫn chuyện,
+**lồng tiếng riêng cho từng nhân vật** và phụ đề màu theo người nói. Toàn bộ hình ảnh, chuyển động,
+nhạc nền và hiệu ứng âm thanh được dựng bằng mã nguồn trong thư mục này (Python + Pillow + ffmpeg),
+giọng đọc tạo offline bằng mô hình Piper VITS.
 
 ## Nhân vật
 
@@ -13,6 +14,13 @@ trong thư mục này (Python + Pillow + ffmpeg), giọng đọc tạo offline b
 | **Moon** | em (nhưng lớn tuổi nhất nhà) | ham học, thích chăm các em | tóc cột đuôi ngựa, bộ đồ bông sát nách màu kem hồng |
 | **Sam** | em Út | điệu đà, nghịch ngợm, lười học, hài hước | tóc dài, bộ đồ ngủ hồng in mặt hoạt hình, túi bèo |
 | **Lu** | cún cưng | biếng ăn, ham chơi, hay chạy theo anh chị | poodle lông xoăn màu nâu |
+
+## Lồng tiếng
+
+Tất cả giọng sinh từ cùng một mô hình, rồi đổi cao độ và nhịp nói cho từng nhân vật
+(bảng `CHARACTER_VOICES` trong `src/tts.py`): Kaka hơi cao và lanh lợi, Puka the thé, Moon dịu,
+Sam lí lắc, Lu "gâu gâu" cao vút, Má trầm hơn người dẫn chuyện; câu của "cả nhà" là ba giọng chồng lên nhau.
+Bong bóng thoại và cử động miệng được render tự động cho người đang nói.
 
 ## Kết quả
 
@@ -26,11 +34,11 @@ từ ngữ miền Nam (ba má, hông, nha, dữ lắm, thiệt hông…).
 ## Cấu trúc
 
 ```
-src/story.py        kịch bản: 14 cảnh, 46 câu thuyết minh
+src/story.py        kịch bản: 14 cảnh, 83 câu (dẫn chuyện + thoại từng nhân vật, có khoá thời gian)
 src/characters.py   vẽ 5 nhân vật (nhiều tư thế / biểu cảm) và đạo cụ
 src/backgrounds.py  5 phông nền: trước nhà (chiều/tối), hành lang kệ giày, phòng khách sofa xanh, phòng ngủ
 src/anim.py         bộ máy keyframe, bong bóng thoại, chữ hiệu ứng, phụ đề, camera
-src/scenes.py       biên đạo từng cảnh (ai đi đâu, làm gì, nói gì, hiệu ứng gì)
+src/scenes.py       biên đạo từng cảnh (nhảy, xoay, tung dép, kéo mền, rượt đuổi, té...) bám theo mốc câu thoại
 src/tts.py          tạo giọng thuyết minh offline (sherpa-onnx + Piper)
 src/timeline.py     tính mốc thời gian theo độ dài từng câu
 src/render.py       dựng khung hình 1280x720 @ 24fps, mã hoá H.264

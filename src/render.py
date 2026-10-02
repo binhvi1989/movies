@@ -55,21 +55,40 @@ def render_frame(sc, bg, built, t):
     frame = bg.copy()
     if built.get("night"):
         frame.alpha_composite(night_overlay())
+    # câu đang nói
+    cur = None
+    for ln in sc["lines"]:
+        if ln["rel"] - 0.05 <= t <= ln["rel"] + ln["dur"] + 0.45:
+            cur = ln
+            break
+    speaking = cur["who"] if cur and ln["rel"] <= t <= ln["rel"] + ln["dur"] else None
     # vẽ theo lớp z, cùng lớp thì ai đứng thấp hơn (gần máy quay) vẽ sau
     states = [(a, a.state(t)) for a in built["actors"]]
     states.sort(key=lambda p: (p[0].z, p[1]["y"]))
+    speaker = None
     for a, st in states:
+        if speaking and a.kind in ("kid", "lu") and (a.name == speaking or (a.kind == "lu" and speaking == "lu")) and st["visible"]:
+            st = dict(st, talk=True)
+            speaker = (a, st)
+        if speaking == "all" and a.kind in ("kid", "lu") and st["visible"]:
+            st = dict(st, talk=True)
         anim.draw_actor(frame, a, st, t)
+    # bong bóng thoại tự động phía trên đầu người nói
+    if speaker and cur["who"] != "all" and not built.get("no_bubble"):
+        a, st = speaker
+        img, x, y = anim.actor_image(a, st, t)
+        hx, hy = x + img.width / 2, y + 10
+        bx = min(max(hx, 230), W - 230)
+        by = max(70, hy - 95)
+        anim.draw_bubble(frame, cur["text"], bx, by, (hx, hy), size=30, maxw=440)
     if built.get("camera") is not None:
         frame = anim.apply_camera(frame, built["camera"].at(t))
     if built.get("title"):
         for (t0, t1) in built["title"]:
             draw_title(frame, t, t0, t1)
     # phụ đề
-    for ln in sc["lines"]:
-        if ln["rel"] - 0.05 <= t <= ln["rel"] + ln["dur"] + 0.45:
-            anim.draw_caption(frame, ln["text"])
-            break
+    if cur:
+        anim.draw_caption(frame, cur["text"], cur["who"])
     # mờ dần đầu / cuối cảnh
     fade = 0.35
     f = 1.0

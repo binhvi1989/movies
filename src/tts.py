@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Tạo giọng thuyết minh tiếng Việt (offline) bằng Piper VITS qua sherpa-onnx.
+"""Tạo giọng thuyết minh và lồng tiếng từng nhân vật (offline, Piper VITS qua sherpa-onnx).
 
-Cách dùng:
-    python3 src/tts.py --voice vais1000 --out build/voice_vais1000
-    python3 src/tts.py --voice vivos    --out build/voice_vivos
+    python3 src/tts.py --voice vais1000 --out build/vais1000/voice
 
-Kết quả: mỗi câu thuyết minh một file WAV + `lines.json` (thời lượng từng câu).
-Các mô hình giọng được tải về thư mục `models/` (xem scripts/download_models.sh).
+Mỗi nhân vật dùng cùng mô hình giọng nhưng được đổi cao độ (pitch) và tốc độ:
+    - sinh âm thanh chậm hơn p lần, rồi phát nhanh lên p lần -> cao độ tăng p lần, nhịp nói giữ nguyên.
+Giọng "all" (cả nhà) là ba giọng cao độ khác nhau chồng lên nhau.
+Kết quả: mỗi câu một file WAV + lines.json (ai nói, lời, thời lượng).
 """
 import argparse
 import json
@@ -24,11 +24,23 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS = os.path.join(ROOT, "models")
 
 VOICES = {
-    # tên -> (thư mục mô hình, tên file onnx, speaker id, tốc độ)
+    # tên -> (thư mục mô hình, tên file onnx, speaker id, tốc độ nền)
     "vais1000": ("vits-piper-vi_VN-vais1000-medium", "vi_VN-vais1000-medium", 0, 0.88),
     "vivos": ("vits-piper-vi_VN-vivos-x_low", "vi_VN-vivos-x_low", 4, 1.0),
     "25hours": ("vits-piper-vi_VN-25hours_single-low", "vi_VN-25hours_single-low", 0, 0.92),
 }
+
+# Giọng từng nhân vật: (hệ số cao độ, hệ số tốc độ so với tốc độ nền)
+CHARACTER_VOICES = {
+    "nar": (1.00, 1.00),
+    "ma": (0.92, 1.00),
+    "kaka": (1.08, 1.05),
+    "puka": (1.24, 1.00),
+    "moon": (1.14, 0.97),
+    "sam": (1.20, 1.03),
+    "lu": (1.45, 1.20),
+}
+ALL_VOICES = [(1.08, 1.02), (1.18, 1.02), (1.24, 1.02)]
 
 # Tên nhân vật viết theo cách đọc tiếng Việt để máy đọc đúng
 READ_AS = [
@@ -64,7 +76,7 @@ def load_tts(voice):
     return sherpa_onnx.OfflineTts(cfg), sid, speed
 
 
-def trim_silence(x, sr, thresh=0.01, pad=0.08):
+def trim_silence(x, sr, thresh=0.01, pad=0.06):
     idx = np.where(np.abs(x) > thresh)[0]
     if len(idx) == 0:
         return x
@@ -73,32 +85,54 @@ def trim_silence(x, sr, thresh=0.01, pad=0.08):
     return x[a:b]
 
 
+def pitch_shift(x, p):
+    """Phát nhanh lên p lần (cao độ tăng p lần, ngắn lại p lần)."""
+    if abs(p - 1.0) < 1e-3:
+        return x
+    n = int(len(x) / p)
+    return np.interp(np.linspace(0, len(x) - 1, n), np.arange(len(x)), x).astype(np.float32)
+
+
+def synth(tts, sid, base_speed, text, who):
+    text = speakable(text)
+    if who == "all":
+        parts = []
+        for p, sp in ALL_VOICES:
+            a = tts.generate(text, sid=sid, speed=base_speed * sp / p)
+            parts.append(pitch_shift(np.asarray(a.samples, dtype=np.float32), p))
+        n = max(len(q) for q in parts)
+        x = np.zeros(n, dtype=np.float32)
+        for k, q in enumerate(parts):
+            off = k * int(0.015 * a.sample_rate)  # lệch nhẹ cho giống nhiều người nói
+            m = min(len(q), n - off)
+            x[off:off + m] += q[:m] / len(parts)
+        return x, a.sample_rate
+    p, sp = CHARACTER_VOICES[who]
+    a = tts.generate(text, sid=sid, speed=base_speed * sp / p)
+    return pitch_shift(np.asarray(a.samples, dtype=np.float32), p), a.sample_rate
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--voice", default="vais1000", choices=list(VOICES))
     ap.add_argument("--out", required=True)
-    ap.add_argument("--speed", type=float, default=None)
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
-    tts, sid, speed = load_tts(args.voice)
-    if args.speed:
-        speed = args.speed
+    tts, sid, base_speed = load_tts(args.voice)
     meta = []
     for s in SCENES:
         for i, line in enumerate(s["lines"]):
-            a = tts.generate(speakable(line), sid=sid, speed=speed)
-            x = np.asarray(a.samples, dtype=np.float32)
-            x = trim_silence(x, a.sample_rate)
-            # chuẩn hoá biên độ
+            x, sr = synth(tts, sid, base_speed, line["text"], line["who"])
+            x = trim_silence(x, sr)
             peak = float(np.max(np.abs(x))) or 1.0
             x = x * (0.85 / peak)
             fn = f"{s['id']}_{i:02d}.wav"
-            sf.write(os.path.join(args.out, fn), x, a.sample_rate)
-            meta.append(dict(scene=s["id"], idx=i, text=line, file=fn, dur=len(x) / a.sample_rate, sr=a.sample_rate))
-            print(f"{fn}: {len(x) / a.sample_rate:5.2f}s  {line}")
+            sf.write(os.path.join(args.out, fn), x, sr)
+            meta.append(dict(scene=s["id"], idx=i, who=line["who"], key=line["key"], text=line["text"], file=fn, dur=len(x) / sr, sr=sr))
+            print(f"{fn}: {len(x) / sr:5.2f}s  [{line['who']}] {line['text']}")
     json.dump(meta, open(os.path.join(args.out, "lines.json"), "w"), ensure_ascii=False, indent=1)
     total = sum(m["dur"] for m in meta)
-    print(f"Tổng thời lượng thuyết minh: {total:.1f}s ({len(meta)} câu)")
+    print(f"Tổng thời lượng lời: {total:.1f}s ({len(meta)} câu)")
 
 
 if __name__ == "__main__":

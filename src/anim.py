@@ -161,18 +161,9 @@ def draw_pop_text(frame, text, x, y, size, color, rot=0.0, alpha=1.0, scale=1.0)
     frame.alpha_composite(layer, (int(x - layer.width / 2), int(y - layer.height / 2)))
 
 
-def draw_actor(frame, actor, st, t):
-    if not st["visible"] or st["alpha"] <= 0:
-        return
+def actor_image(actor, st, t):
+    """Ảnh RGBA của nhân vật/đạo cụ ở trạng thái st và toạ độ góc trên-trái để dán."""
     kind = actor.kind
-    if kind == "bubble":
-        if st["text"]:
-            draw_bubble(frame, st["text"], st["x"], st["y"], st["tail"], size=int(st["size"]))
-        return
-    if kind == "text":
-        if st["text"]:
-            draw_pop_text(frame, st["text"], st["x"], st["y"], st["size"], st["color"], st["rot"], st["alpha"], st["scale"])
-        return
     bob = st["bob"] * math.sin(2 * math.pi * st["bobf"] * t) if st["bob"] else 0.0
     sway = st["sway"] * math.sin(2 * math.pi * st["bobf"] * t) if st["sway"] else 0.0
     if kind == "kid":
@@ -182,24 +173,52 @@ def draw_actor(frame, actor, st, t):
         phase = (t * st["walkspeed"]) % 1.0 if st["pose"] in ("walk",) else 0.0
         img = ch.sprite(actor.name, st["pose"], expr, round(phase * 8) / 8, bool(st["flip"]), round(st["look"], 1))
     elif kind == "lu":
+        expr = st["expr"]
+        if st["talk"] and int(t * 8) % 2 == 0:
+            expr = "laugh"
         phase = (t * 4.0) % 1.0 if st["pose"] == "run" else 0.0
-        img = ch.lu(st["pose"], st["expr"], round(phase * 6) / 6, bool(st["flip"]), st["item"])
+        img = ch.lu(st["pose"], expr, round(phase * 6) / 6, bool(st["flip"]), st["item"])
     elif kind == "prop":
         img = ch.prop(actor.name)
     else:
         raise ValueError(kind)
     img = _scaled(img, st["scale"] * (PROP_SCALE if kind == "prop" else KID_SCALE))
     img = _rotate(img, st["rot"] + sway)
+    x = int(st["x"] - img.width / 2)
+    y = int(st["y"] + bob - img.height)
+    return img, x, y
+
+
+def draw_actor(frame, actor, st, t):
+    if not st["visible"] or st["alpha"] <= 0:
+        return
+    if actor.kind == "bubble":
+        if st["text"]:
+            draw_bubble(frame, st["text"], st["x"], st["y"], st["tail"], size=int(st["size"]))
+        return
+    if actor.kind == "text":
+        if st["text"]:
+            draw_pop_text(frame, st["text"], st["x"], st["y"], st["size"], st["color"], st["rot"], st["alpha"], st["scale"])
+        return
+    img, x, y = actor_image(actor, st, t)
     if st["alpha"] < 1:
         a = img.getchannel("A").point(lambda v: int(v * st["alpha"]))
         img = img.copy()
         img.putalpha(a)
-    x = int(st["x"] - img.width / 2)
-    y = int(st["y"] + bob - img.height)
     frame.alpha_composite(img, (x, y))
 
 
-def draw_caption(frame, text, alpha=1.0):
+CAPTION_COLORS = {
+    "nar": (255, 250, 230), "ma": (255, 220, 160), "kaka": (150, 210, 255), "puka": (255, 170, 200),
+    "moon": (190, 240, 170), "sam": (255, 150, 230), "lu": (255, 200, 120), "all": (255, 230, 90),
+}
+
+
+def draw_caption(frame, text, who="nar", alpha=1.0):
+    from story import NAMES
+    if who != "nar":
+        text = f"{NAMES.get(who, who)}: {text}"
+    color = CAPTION_COLORS.get(who, (255, 250, 230))
     f = font(36)
     lines = wrap_text(text, f, 1140)
     lh = 46
@@ -210,7 +229,7 @@ def draw_caption(frame, text, alpha=1.0):
     bw = max(f.getlength(l) for l in lines) + 56
     d.rounded_rectangle([W / 2 - bw / 2, y0, W / 2 + bw / 2, y0 + bh], radius=20, fill=(20, 15, 25, int(150 * alpha)))
     for i, l in enumerate(lines):
-        d.text((W / 2, y0 + 13 + lh * i + lh / 2), l, font=f, fill=(255, 250, 230, int(255 * alpha)), anchor="mm",
+        d.text((W / 2, y0 + 13 + lh * i + lh / 2), l, font=f, fill=color + (int(255 * alpha),), anchor="mm",
                stroke_width=3, stroke_fill=(30, 20, 30, int(255 * alpha)))
     frame.alpha_composite(layer)
 

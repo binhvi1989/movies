@@ -625,6 +625,21 @@ def prop(kind):
         _rrect(d, [r * 0.05, r * 0.05, W - r * 0.05, H - r * 0.05], int(r * 0.5), (120, 170, 240), w=4)
         for i in range(5):
             d.ellipse([r * 0.3 + i * r * 0.45, H * 0.35, r * 0.6 + i * r * 0.45, H * 0.35 + r * 0.3], fill=(255, 255, 255))
+    elif kind == "slipper":
+        W, H = int(r * 1.3), int(r * 0.7)
+        img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        _rrect(d, [r * 0.05, r * 0.15, W - r * 0.05, H - r * 0.05], int(r * 0.25), (60, 110, 200), w=3)
+        d.arc([r * 0.25, -r * 0.05, W - r * 0.25, r * 0.5], 0, 180, fill=OUT, width=4 * SS)
+        d.arc([r * 0.3, 0, W - r * 0.3, r * 0.45], 0, 180, fill=(230, 80, 80), width=2 * SS)
+    elif kind == "bowl":
+        W, H = int(r * 1.2), int(r * 0.8)
+        img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        d.chord([r * 0.05, r * 0.05, W - r * 0.05, H - r * 0.05], 0, 180, fill=(230, 90, 90), outline=OUT, width=3 * SS)
+        _ell(d, W / 2, r * 0.3, W / 2 - r * 0.05, r * 0.2, (255, 250, 235), w=3)
+        for k in range(5):
+            _ell(d, W * 0.25 + k * W * 0.12, r * 0.28 + (k % 2) * r * 0.06, r * 0.06, r * 0.06, (200, 150, 90), outline=None)
     elif kind == "zzz":
         W, H = int(r * 1.5), int(r * 1.2)
         img = Image.new("RGBA", (W, H), (0, 0, 0, 0))

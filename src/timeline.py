@@ -7,11 +7,11 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 from story import SCENES  # noqa: E402
 
-GAP = 0.55      # khoảng nghỉ giữa hai câu
+GAP = 0.4       # khoảng nghỉ giữa hai câu
 TAIL = 1.0      # nghỉ cuối cảnh
 LEAD = {"01_intro": 3.2, "14_outro": 0.8}  # thời gian trước câu đầu tiên của cảnh
 LEAD_DEFAULT = 0.7
-EXTRA = {"13_ending": 1.5, "14_outro": 2.5, "09_kaka_monkey": 0.6, "11_chase": 0.6}  # kéo dài cuối cảnh
+EXTRA = {"13_ending": 1.5, "14_outro": 2.5, "09_kaka_monkey": 1.2, "11_chase": 0.6, "02_kaka": 0.5, "06_lu": 1.2}  # kéo dài cuối cảnh
 
 
 def build(voice_dir):
@@ -27,7 +27,7 @@ def build(voice_dir):
         lt = start + LEAD.get(s["id"], LEAD_DEFAULT)
         items = []
         for m in lines:
-            items.append(dict(text=m["text"], file=m["file"], start=lt, dur=m["dur"], rel=lt - start))
+            items.append(dict(text=m["text"], who=m.get("who", "nar"), key=m.get("key"), file=m["file"], start=lt, dur=m["dur"], rel=lt - start))
             lt += m["dur"] + GAP
         end = lt - GAP + TAIL + EXTRA.get(s["id"], 0.0)
         scenes.append(dict(id=s["id"], bg=s["bg"], start=start, end=end, dur=end - start, lines=items))
