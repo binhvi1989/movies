@@ -1,19 +1,22 @@
-# Năm Anh Em Nhà Mình
+# Nhà Mình Vui Trung Thu
 
-Phim hoạt hình ngắn (~3 phút) cho trẻ em về tình anh em trong gia đình, có người dẫn chuyện,
-**lồng tiếng riêng cho từng nhân vật** và phụ đề màu theo người nói. Toàn bộ hình ảnh, chuyển động,
-nhạc nền và hiệu ứng âm thanh được dựng bằng mã nguồn trong thư mục này (Python + Pillow + ffmpeg),
-giọng đọc tạo offline bằng mô hình Piper VITS.
+Phim hoạt hình ngắn (~3 phút rưỡi) cho trẻ em về một gia đình sáu anh em và chú cún Lu chuẩn bị múa lân
+Trung thu. Nhân vật là **đúng chân dung do người dùng cung cấp** (assets/refs), được tách nền thành hình cắt dán
+(assets/cutouts) và chuyển động theo kiểu 2.5D: đi, nhún, nhảy, nghiêng, xoay, bóng đổ mềm, camera phóng gần.
+Có người dẫn chuyện, lồng tiếng riêng từng nhân vật (giọng nam/nữ phân biệt bằng cao độ), biểu cảm vẽ thêm
+(khóc, giận, toát mồ hôi, tim, nốt nhạc) và phụ đề màu theo người nói. Toàn bộ dựng offline bằng Python + Pillow + ffmpeg.
 
 ## Nhân vật
 
-| Tên | Vai vế | Tính cách | Tạo hình |
-|-----|--------|-----------|----------|
-| **Kaka** | anh Hai, lớn nhất nhà | ham chơi, hài hước, lì lợm, thương em | tóc ngắn, áo xám loang đá có khóa kéo ở vai, quần short xám |
-| **Puka** | chị Ba | bướng bỉnh, nghịch ngợm, lười đi học | tóc rối bù, áo thun hồng in hình bé đeo kính và chữ THINGW |
-| **Moon** | em (nhưng lớn tuổi nhất nhà) | ham học, thích chăm các em | tóc cột đuôi ngựa, bộ đồ bông sát nách màu kem hồng |
-| **Sam** | em Út | điệu đà, nghịch ngợm, lười học, hài hước | tóc dài, bộ đồ ngủ hồng in mặt hoạt hình, túi bèo |
-| **Lu** | cún cưng | biếng ăn, ham chơi, hay chạy theo anh chị | poodle lông xoăn màu nâu |
+| Tên | Vai vế | Tính cách |
+|-----|--------|-----------|
+| **Kaka** | anh Hai | nghịch ngợm, siêu lì, mê múa lân, cầm đầu lân |
+| **Puka** | chị Ba | nghịch ngợm, siêu quậy |
+| **Moon** | em (lớn tuổi nhất nhà) | ham học, lo cho cả đám, đánh trống |
+| **Sam** | chị Tư | siêu lì, điệu đà, nhí nhảnh, làm đuôi lân |
+| **Muội** | chị Năm | thích ăn, giành đồ chơi, hay chọc Eric |
+| **Eric** | em Út | siêu quậy, mít ướt, làm Ông Địa |
+| **Lu** | cún cưng | ham chơi, biếng ăn, hay đòi đi theo |
 
 ## Lồng tiếng
 
@@ -34,11 +37,12 @@ từ ngữ miền Nam (ba má, hông, nha, dữ lắm, thiệt hông…).
 ## Cấu trúc
 
 ```
-src/story.py        kịch bản: 14 cảnh, 83 câu (dẫn chuyện + thoại từng nhân vật, có khoá thời gian)
-src/characters.py   vẽ 5 nhân vật (nhiều tư thế / biểu cảm) và đạo cụ
-src/backgrounds.py  5 phông nền: trước nhà (chiều/tối), hành lang kệ giày, phòng khách sofa xanh, phòng ngủ
-src/anim.py         bộ máy keyframe, bong bóng thoại, chữ hiệu ứng, phụ đề, camera
-src/scenes.py       biên đạo từng cảnh (nhảy, xoay, tung dép, kéo mền, rượt đuổi, té...) bám theo mốc câu thoại
+src/story.py        kịch bản: 14 cảnh, 86 câu (dẫn chuyện + thoại từng nhân vật, có khoá thời gian)
+src/cutout.py       tách nền chân dung -> assets/cutouts (ước lượng nền bậc hai, lấp lỗ, mặt nạ hình dáng cho Lu)
+src/characters.py   đạo cụ vẽ bằng Pillow (đầu lân, đuôi lân, trống, quạt, mặt nạ Ông Địa, lồng đèn, bánh trung thu...)
+src/backgrounds.py  phông nền: trước nhà (chiều/tối), hành lang kệ giày, phòng khách sofa xanh, phòng ngủ, sân Trung thu
+src/anim.py         bộ máy keyframe, nhân vật cắt dán + bóng đổ + biểu cảm, bong bóng thoại, phụ đề, camera
+src/scenes.py       biên đạo 14 cảnh (giới thiệu, lên kế hoạch, tập lân, giành quạt, đêm Trung thu, kết) bám theo mốc câu thoại
 src/tts.py          tạo giọng thuyết minh offline (sherpa-onnx + Piper)
 src/timeline.py     tính mốc thời gian theo độ dài từng câu
 src/render.py       dựng khung hình 1280x720 @ 24fps, mã hoá H.264
@@ -52,6 +56,7 @@ scripts/download_models.sh  tải mô hình giọng đọc
 ```bash
 pip install -r requirements.txt       # cần sẵn ffmpeg
 scripts/download_models.sh            # tải mô hình giọng (~100 MB)
+python3 src/cutout.py                 # tách nền chân dung (chỉ cần khi đổi ảnh trong assets/refs)
 ./build.sh                            # -> output/nam_anh_em_nha_minh_vais1000.mp4
 ./build.sh vivos                      # -> bản giọng VIVOS
 ```

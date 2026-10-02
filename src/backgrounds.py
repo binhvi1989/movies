@@ -232,6 +232,49 @@ def background(kind):
             img = Image.blend(img, Image.eval(img, lambda v: v), 0)
             from PIL import ImageChops
             img = ImageChops.add(img, glow)
+    elif kind == "yard":
+        # sân nhà đêm Trung thu: trời đêm, trăng tròn, dây lồng đèn, sân gạch
+        _grad(img, (18, 22, 70), (60, 45, 110), 0, int(h * 0.6))
+        rnd = random.Random(12)
+        for _ in range(90):
+            x, y = rnd.uniform(0, w), rnd.uniform(0, h * 0.5)
+            r = rnd.uniform(2, 5)
+            d.ellipse([x - r, y - r, x + r, y + r], fill=(255, 255, 230))
+        d.ellipse([w * 0.72, h * 0.06, w * 0.72 + 260, h * 0.06 + 260], fill=(255, 240, 170), outline=(240, 210, 120), width=6)
+        d.ellipse([w * 0.74, h * 0.1, w * 0.74 + 60, h * 0.1 + 60], fill=(245, 225, 150))
+        d.ellipse([w * 0.8, h * 0.2, w * 0.8 + 40, h * 0.2 + 40], fill=(245, 225, 150))
+        # hàng rào + nhà phía sau
+        d.rectangle([0, h * 0.42, w, h * 0.6], fill=(80, 60, 110), outline=OUT, width=4)
+        for k in range(0, w, 70):
+            d.rectangle([k + 10, h * 0.38, k + 50, h * 0.6], fill=(95, 75, 125), outline=OUT, width=3)
+        for k in range(3):
+            wx = w * 0.1 + k * w * 0.3
+            d.rectangle([wx, h * 0.3, wx + w * 0.12, h * 0.42], fill=(255, 225, 140), outline=OUT, width=4)
+            d.rectangle([wx - 20, h * 0.26, wx + w * 0.12 + 20, h * 0.31], fill=(120, 60, 60), outline=OUT, width=4)
+        # dây lồng đèn
+        for row in (0.12, 0.2):
+            pts = [(k * w / 10, h * row + math.sin(k * 0.9) * 18) for k in range(11)]
+            d.line(pts, fill=(230, 230, 230), width=3)
+            for i, (px, py) in enumerate(pts[1:-1]):
+                c = [(240, 60, 60), (250, 200, 60), (90, 190, 240), (120, 220, 120)][i % 4]
+                d.line([(px, py), (px, py + 30)], fill=(230, 230, 230), width=3)
+                d.rounded_rectangle([px - 28, py + 30, px + 28, py + 95], radius=18, fill=c, outline=OUT, width=3)
+                d.rectangle([px - 14, py + 24, px + 14, py + 32], fill=(250, 200, 60), outline=OUT, width=2)
+                d.rectangle([px - 14, py + 93, px + 14, py + 101], fill=(250, 200, 60), outline=OUT, width=2)
+        # sân gạch đỏ
+        d.rectangle([0, h * 0.6, w, h], fill=(150, 80, 60))
+        for yy in range(int(h * 0.6), h, 60):
+            d.line([0, yy, w, yy], fill=(120, 60, 45), width=3)
+            off = 0 if (yy // 60) % 2 == 0 else 60
+            for xx in range(off, w, 120):
+                d.line([xx, yy, xx, yy + 60], fill=(120, 60, 45), width=3)
+        # ánh sáng ấm từ lồng đèn
+        from PIL import ImageChops
+        glow = Image.new("RGB", img.size, (0, 0, 0))
+        gd = ImageDraw.Draw(glow)
+        gd.ellipse([w * 0.1, h * 0.05, w * 0.9, h * 0.7], fill=(45, 35, 15))
+        glow = glow.filter(ImageFilter.GaussianBlur(120))
+        img = ImageChops.add(img, glow)
     elif kind == "hall":
         # trần/tường: cửa cuốn kem gân dọc, bên trái cửa mở ra ngoài
         _shutter_wall(d, 0, w, 0, h * 0.72)

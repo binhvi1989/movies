@@ -50,7 +50,34 @@ class Track:
 
 DEFAULTS = dict(x=640, y=690, scale=1.0, pose="stand", expr="smile", flip=False, look=0.0, alpha=1.0,
                 rot=0.0, bob=0.0, bobf=2.0, talk=False, item=None, walkspeed=2.2, visible=True,
-                text="", size=48, color=(255, 255, 255), tail=None, sway=0.0)
+                text="", size=48, color=(255, 255, 255), tail=None, sway=0.0,
+                squash=1.0, ground=None, emote=None, shadow=True)
+
+# ---- nhân vật cắt dán từ chân dung (assets/cutouts/<name>.png), neo giữa bàn chân
+import os
+CUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "cutouts")
+CUT_BASE_H = 470  # chiều cao (px) khi scale = 1 của nhân vật cao nhất
+CUT_REL_H = {"moon": 1.0, "sam": 0.97, "kaka": 0.95, "muoi": 0.9, "puka": 0.86, "eric": 0.8, "lu": 0.62}
+_cut_src = {}
+_cut_cache = {}
+
+
+def cut_image(name, h_px, flip=False, squash=1.0):
+    key = (name, int(h_px), flip, round(squash, 2))
+    if key in _cut_cache:
+        return _cut_cache[key]
+    if name not in _cut_src:
+        _cut_src[name] = Image.open(os.path.join(CUT_DIR, f"{name}.png")).convert("RGBA")
+    src = _cut_src[name]
+    h = max(2, int(h_px * squash))
+    w = max(2, int(src.width * h_px / src.height / math.sqrt(squash)))
+    img = src.resize((w, h), Image.LANCZOS)
+    if flip:
+        img = img.transpose(Image.FLIP_LEFT_RIGHT)
+    if len(_cut_cache) > 600:
+        _cut_cache.clear()
+    _cut_cache[key] = img
+    return img
 
 
 class Actor:
@@ -64,7 +91,7 @@ class Actor:
 
     def set(self, key, val):
         if isinstance(val, list):
-            self.tracks[key] = Track(val, discrete=key in ("pose", "expr", "flip", "talk", "item", "visible", "text", "color", "tail"))
+            self.tracks[key] = Track(val, discrete=key in ("pose", "expr", "flip", "talk", "item", "visible", "text", "color", "tail", "emote", "shadow"))
         else:
             self.tracks[key] = Track([(0, val)])
         return self
@@ -180,6 +207,15 @@ def actor_image(actor, st, t):
         img = ch.lu(st["pose"], expr, round(phase * 6) / 6, bool(st["flip"]), st["item"])
     elif kind == "prop":
         img = ch.prop(actor.name)
+    elif kind == "cut":
+        sq = st["squash"]
+        if st["talk"]:
+            sq *= 1.0 + 0.025 * math.sin(2 * math.pi * 7 * t)
+        img = cut_image(actor.name, CUT_BASE_H * CUT_REL_H.get(actor.name, 0.9) * st["scale"], bool(st["flip"]), sq)
+        img = _rotate(img, st["rot"] + sway)
+        x = int(st["x"] - img.width / 2)
+        y = int(st["y"] + bob - img.height)
+        return img, x, y
     else:
         raise ValueError(kind)
     img = _scaled(img, st["scale"] * (PROP_SCALE if kind == "prop" else KID_SCALE))
@@ -201,16 +237,77 @@ def draw_actor(frame, actor, st, t):
             draw_pop_text(frame, st["text"], st["x"], st["y"], st["size"], st["color"], st["rot"], st["alpha"], st["scale"])
         return
     img, x, y = actor_image(actor, st, t)
+    if actor.kind in ("cut", "lu") and st["shadow"]:
+        draw_shadow(frame, st["x"], st["ground"] if st["ground"] is not None else st["y"], img.width * 0.55,
+                    lift=max(0.0, (st["ground"] if st["ground"] is not None else st["y"]) - (st["y"] + (st["bob"] * math.sin(2 * math.pi * st["bobf"] * t) if st["bob"] else 0))))
     if st["alpha"] < 1:
         a = img.getchannel("A").point(lambda v: int(v * st["alpha"]))
         img = img.copy()
         img.putalpha(a)
     frame.alpha_composite(img, (x, y))
+    if actor.kind == "cut" and st["emote"]:
+        draw_emote(frame, st["emote"], x + img.width / 2, y, img.width, img.height, t)
+
+
+def draw_shadow(frame, x, ground, w, lift=0.0):
+    """Bóng đổ mềm dưới chân, nhỏ và nhạt dần khi nhân vật nhảy lên."""
+    k = max(0.35, 1.0 - lift / 250.0)
+    w = w * k
+    h = w * 0.22
+    layer = Image.new("RGBA", (int(w) + 8, int(h) + 8), (0, 0, 0, 0))
+    ImageDraw.Draw(layer).ellipse([2, 2, w + 4, h + 4], fill=(20, 10, 10, int(80 * k)))
+    from PIL import ImageFilter
+    layer = layer.filter(ImageFilter.GaussianBlur(3))
+    frame.alpha_composite(layer, (int(x - w / 2 - 4), int(ground - h / 2 - 4)))
+
+
+def draw_emote(frame, kind, cx, top, w, h, t):
+    """Biểu cảm vẽ thêm quanh đầu nhân vật cắt dán: cry | angry | sweat | hearts | music | zzz | stars | question."""
+    d = ImageDraw.Draw(frame)
+    head_y = top + h * 0.22
+    if kind == "cry":
+        for sgn in (-1, 1):
+            for k in range(2):
+                ph = ((t * 2.2 + k * 0.5 + (0.25 if sgn > 0 else 0)) % 1.0)
+                ty = head_y + ph * h * 0.25
+                tx = cx + sgn * w * 0.16 + sgn * ph * 8
+                r = 7 + 4 * (1 - ph)
+                d.ellipse([tx - r, ty - r * 1.4, tx + r, ty + r], fill=(120, 190, 255, 230), outline=(40, 60, 120), width=2)
+        draw_pop_text(frame, "oa oa", cx + w * 0.55, top + h * 0.05, 34, (120, 190, 255), rot=8, scale=1 + 0.1 * math.sin(t * 9))
+    elif kind == "angry":
+        px, py = cx + w * 0.38, top - 6
+        for a in (0, 90):
+            dx, dy = (14, 0) if a == 0 else (0, 14)
+            d.line([(px - dx, py - dy), (px + dx, py + dy)], fill=(230, 50, 50), width=6)
+        d.ellipse([px - 7, py - 7, px + 7, py + 7], fill=(255, 220, 220))
+    elif kind == "sweat":
+        px, py = cx + w * 0.42, head_y - 10 + 6 * math.sin(t * 6)
+        d.polygon([(px, py - 16), (px - 9, py + 4), (px + 9, py + 4)], fill=(130, 200, 255))
+        d.ellipse([px - 9, py - 4, px + 9, py + 12], fill=(130, 200, 255), outline=(40, 60, 120), width=2)
+    elif kind == "hearts":
+        for k in range(3):
+            ph = (t * 0.8 + k / 3) % 1.0
+            draw_pop_text(frame, "♥", cx + (k - 1) * w * 0.35, top - 10 - ph * 70, 40, (255, 90, 120), rot=(k - 1) * 15, alpha=1 - ph)
+    elif kind == "music":
+        for k in range(2):
+            ph = (t * 1.0 + k / 2) % 1.0
+            draw_pop_text(frame, "♪" if k else "♫", cx + (k * 2 - 1) * w * 0.4, top - 5 - ph * 60, 42, (255, 230, 90), rot=(k * 2 - 1) * 12, alpha=1 - ph)
+    elif kind == "zzz":
+        for k in range(3):
+            ph = (t * 0.6 + k / 3) % 1.0
+            draw_pop_text(frame, "Z", cx + w * 0.3 + ph * 40, top - ph * 80, 28 + k * 8, (120, 140, 230), rot=-10, alpha=1 - ph)
+    elif kind == "stars":
+        for k in range(4):
+            a = t * 3 + k * math.pi / 2
+            draw_pop_text(frame, "✦", cx + math.cos(a) * w * 0.45, top + 10 + math.sin(a) * 18, 34, (255, 220, 70), rot=k * 20)
+    elif kind == "question":
+        draw_pop_text(frame, "?", cx + w * 0.45, top - 10 + 5 * math.sin(t * 5), 60, (255, 220, 70), rot=10)
 
 
 CAPTION_COLORS = {
     "nar": (255, 250, 230), "ma": (255, 220, 160), "kaka": (150, 210, 255), "puka": (255, 170, 200),
     "moon": (190, 240, 170), "sam": (255, 150, 230), "lu": (255, 200, 120), "all": (255, 230, 90),
+    "muoi": (255, 205, 150), "eric": (160, 235, 235),
 }
 
 

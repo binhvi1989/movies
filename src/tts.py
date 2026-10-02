@@ -32,12 +32,15 @@ VOICES = {
 
 # Giọng từng nhân vật: (hệ số cao độ, hệ số tốc độ so với tốc độ nền)
 CHARACTER_VOICES = {
+    # (cao độ, tốc độ). Bé trai: Kaka trầm hơn các chị, Eric nhỏ nhất nên cao và nũng nịu.
     "nar": (1.00, 1.00),
     "ma": (0.92, 1.00),
-    "kaka": (1.08, 1.05),
-    "puka": (1.24, 1.00),
-    "moon": (1.14, 0.97),
+    "kaka": (0.96, 1.08),
+    "puka": (1.24, 1.02),
+    "moon": (1.12, 0.97),
     "sam": (1.20, 1.03),
+    "muoi": (1.15, 0.96),
+    "eric": (1.30, 1.00),
     "lu": (1.45, 1.20),
 }
 ALL_VOICES = [(1.08, 1.02), (1.18, 1.02), (1.24, 1.02)]
@@ -49,6 +52,8 @@ READ_AS = [
     (r"\bMoon\b", "Mun"),
     (r"\bSam\b", "Sam"),
     (r"\bLu\b", "Lu"),
+    (r"\bEric\b", "Ê rích"),
+    (r"\bMuội\b", "Muội"),
 ]
 
 

@@ -199,6 +199,44 @@ def sfx(kind, tts=None):
         tt = t(0.8)
         f = 260 + 120 * np.sin(np.pi * tt / 0.8)
         return (np.sin(2 * np.pi * np.cumsum(f) / SR) + 0.3 * np.sin(2 * np.pi * 2 * np.cumsum(f) / SR)) * np.sin(np.pi * tt / 0.8) * 0.25
+    if kind == "liondrum":
+        # trống múa lân: tùng tùng cắc (4.4 giây, 112 nhịp)
+        out = np.zeros(int(4.5 * SR))
+        beat = 0.44
+        for k in range(10):
+            t0 = k * beat
+            for off, kind2 in ((0.0, "tung"), (0.22, "tung"), (0.33, "cac")):
+                if kind2 == "tung":
+                    n = int(0.25 * SR)
+                    tt = t(0.25)
+                    x = np.sin(2 * np.pi * (70 + 60 * np.exp(-tt * 25)) * tt) * np.exp(-tt * 9) * 0.9
+                    x += np.random.RandomState(k).randn(n) * np.exp(-tt * 60) * 0.3
+                else:
+                    n = int(0.08 * SR)
+                    tt = t(0.08)
+                    x = np.random.RandomState(7 + k).randn(n) * np.exp(-tt * 90) * 0.5 + np.sin(2 * np.pi * 1800 * tt) * np.exp(-tt * 70) * 0.4
+                place(out, x, t0 + off)
+        return lowpass_fast(out, 6000) * 0.8
+    if kind == "cry":
+        if tts is not None:
+            a = tts.generate("Oa oa oa!", sid=0, speed=0.95)
+            x = np.asarray(a.samples, dtype=np.float32)
+            # giọng em bé: phát nhanh hơn 1.3 lần (cao hơn)
+            n = int(len(x) / 1.3)
+            x = np.interp(np.linspace(0, len(x) - 1, n), np.arange(len(x)), x)
+            return resample(x, a.sample_rate) * 0.6
+        tt = t(1.0)
+        f = 420 + 60 * np.sin(2 * np.pi * 3 * tt)
+        return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.sin(np.pi * tt) * 0.3
+    if kind == "clap":
+        out = np.zeros(int(2.5 * SR))
+        rs = np.random.RandomState(3)
+        for k in range(60):
+            n = int(0.03 * SR)
+            tt = t(0.03)
+            x = rs.randn(n) * np.exp(-tt * 150) * 0.35
+            place(out, lowpass_fast(x, 4000), rs.uniform(0, 2.3))
+        return out
     if kind == "laugh":
         if tts is not None:
             a = tts.generate("Ha ha ha ha!", sid=0, speed=1.25)
