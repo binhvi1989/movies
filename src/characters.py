@@ -969,6 +969,13 @@ def prop(kind):
             a = k * math.pi / 4
             _ell(d, W / 2 + math.cos(a) * r * 0.32, H * 0.4 + math.sin(a) * r * 0.18, r * 0.07, r * 0.05, (200, 130, 50), outline=None)
         _ell(d, W / 2, H * 0.4, r * 0.12, r * 0.08, (200, 130, 50), outline=None)
+    elif kind == "mustache":
+        W, H = int(r * 1.2), int(r * 0.5)
+        img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        for sgn in (-1, 1):
+            d.chord([W / 2 + (sgn * r * 0.55 - r * 0.5 if sgn > 0 else -r * 0.6), r * 0.05, W / 2 + (r * 0.6 if sgn > 0 else -sgn * r * 0.55 + r * 0.5), H - r * 0.05], 180, 360, fill=(40, 30, 30))
+        d.ellipse([W / 2 - r * 0.08, H * 0.3, W / 2 + r * 0.08, H * 0.7], fill=(40, 30, 30))
     elif kind == "zzz":
         W, H = int(r * 1.5), int(r * 1.2)
         img = Image.new("RGBA", (W, H), (0, 0, 0, 0))

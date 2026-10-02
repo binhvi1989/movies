@@ -36,7 +36,7 @@ def kid(name, x0, gy=FLOOR, z=10, scale=1.0, **tr):
     ground = tr.pop("ground", gy)
     yy = tr.pop("y", gy)
     xx = tr.pop("x", x0)
-    return Actor("cut", name, z=z, x=xx, y=yy, scale=scale, ground=ground, **tr)
+    return Actor("puppet", name, z=z, x=xx, y=yy, scale=scale, ground=ground, **tr)
 
 
 def pop(text, t0, t1, x, y, size=70, color=YEL, rot=-8, jitter=True):
@@ -179,6 +179,7 @@ def sc_intro(s):
                 y=[(0, door_y + 150), (tt, door_y + 150), (tt + 0.35, door_y)])
         jump(a, K["hello"][0] + i * 0.08, 28, 2, 0.4)
         a.set("bob", [(0, 0), (tt + 0.4, 3)]).set("bobf", 2.5 + i * 0.3)
+        a.set("pose", [(0, "stand"), (tt + 0.3, "wave"), (K["hello"][0], "cheer")])
         acts.append(a)
     lu = kid("lu", -200, door_y + 2, z=20, scale=0.33, x=[(0, -200), (t_kids + 0.9, -200), (t_kids + 2.2, 470), (K["zoom"][0], 470), (K["zoom"][0] + 1.0, 810)],
              bob=6, bobf=5)
@@ -228,6 +229,8 @@ def sc_kaka(s):
     shake(kaka, K["drop"][0] + 0.2, K["drop"][0] + 0.9, 8)
     kaka.set("x", kaka.tracks["x"].keys + [(K["li"][0] + 0.4, 930), (K["li"][1], 640)])
     acts.append(pop("hì hì", K["li"][0] + 0.3, K["li"][1] + 0.4, 860, 300, 48, PINK, 8))
+    kaka.set("pose", [(0, "stand"), (K["intro"][0], "wave"), (K["intro"][1], "stand"), (t0, "lion"), (t1, "stand"), (K["li"][0], "shrug"), (K["li"][1] + 0.3, "stand")])
+    kaka.set("headtilt", [(0, 0), (K["li"][0], 0), (K["li"][0] + 0.3, -8), (K["li"][1], -8), (K["li"][1] + 0.3, 0)])
     return dict(actors=acts, camera=None, sfx=[(K["intro"][0], "pop"), (t0, "liondrum"), (K["drop"][0] + 0.2, "boing"), (K["li"][0] + 0.3, "laugh")], title=None)
 
 
@@ -257,6 +260,14 @@ def sc_puka(s):
     jump(puka, K["hihi"][0], 30, 3, 0.3)
     puka.set("emote", [(0, None), (K["hihi"][0], "stars"), (K["hihi"][1] + 0.5, None)])
     acts.append(pop("HI HI!", K["hihi"][0] + 0.2, K["hihi"][1] + 0.5, 800, 250, 60, PINK, 8))
+    puka.set("pose", [(0, "stand"), (K["intro"][0], "cheer"), (K["intro"][1] + 0.5, "stand"), (K["boo"][0] - 0.05, "boo"), (K["hihi"][0], "cheer"), (K["hihi"][1] + 0.5, "stand")])
+    kaka.set("pose", [(0, "stand"), (K["boo"][0] + 0.05, "cheer"), (K["oai"][1] + 0.3, "stand"), (K["beard2"][0], "cry"), (K["beard2"][1] + 0.5, "stand")])
+    kaka.set("mouth", [(0, None), (K["boo"][0] + 0.05, "o"), (K["oai"][0], None), (K["beard2"][0] + 1.2, "o"), (K["beard2"][1] + 0.5, None)])
+    kaka.set("emote", kaka.tracks["emote"].keys + [(K["beard"][0], None), (K["beard2"][0] + 1.0, "sweat"), (K["beard2"][1] + 0.5, None)])
+    acts.append(Actor("prop", "mustache", z=30, scale=1.0, x=[(0, 300)], y=FLOOR - H_OF["kaka"] * 0.95 * 0.66,
+                      visible=[(0, False), (K["beard"][0] + 1.0, True), (K["beard2"][1] + 0.8, False)]))
+    puka.set("emote", puka.tracks["emote"].keys + [(K["beard"][0] + 1.0, "stars"), (K["beard2"][1] + 0.5, None)])
+    jump(puka, K["beard2"][0] + 0.5, 30, 3, 0.3)
     return dict(actors=acts, camera=None, sfx=[(K["intro"][0], "pop"), (K["boo"][0], "boing"), (K["oai"][0], "swoosh"), (K["hihi"][0], "laugh")], title=None)
 
 
@@ -286,6 +297,10 @@ def sc_moon(s):
     acts.append(lantern)
     acts += stars(K["lantern"][0] + 0.8, K["lantern"][1] + 0.6, hx, hy)
     jump(moon, K["lantern"][0] + 0.8, 30, 1, 0.4)
+    moon.set("pose", [(0, "stand"), (K["intro"][0], "wave"), (K["intro"][0] + 1.5, "stand"), (L[1], "hold"), (K["lantern"][0], "hold")])
+    moon.set("mouth", [(0, None), (K["intro"][0] + 2.2, "o"), (K["intro"][0] + 2.6, None)])
+    kaka.set("pose", [(0, "stand"), (L[1] + 0.6, "point"), (L[1] + 2.5, "stand")])
+    puka.set("pose", [(0, "stand"), (L[1] + 1.0, "cheer"), (L[1] + 2.5, "stand")])
     return dict(actors=acts, camera=None, sfx=[(K["intro"][0], "pop"), (K["intro"][0] + 2.2, "boing"), (K["lantern"][0] + 0.8, "sparkle")], title=None)
 
 
@@ -307,6 +322,15 @@ def sc_sam(s):
     sam.set("flip", sam.tracks["flip"].keys + [(K["call"][0] + 0.3, True), (K["later"][1] + 0.5, False)])
     sam.set("rot", sam.tracks["rot"].keys + [(K["later"][0], 0), (K["later"][0] + 0.3, 8), (K["later"][1], 8), (K["later"][1] + 0.3, 0)])
     acts.append(pop("hứ", K["later"][1], K["later"][1] + 0.8, 820, 320, 48, PINK, 10))
+    sam.set("pose", [(0, "stand"), (K["intro"][0], "wave"), (K["intro"][1], "cheer"), (K["twirl"][1] + 0.3, "stand"), (K["mirror"][0], "hold"), (K["no2"][0], "cheer"), (K["no2"][1] + 0.3, "stand"), (K["later"][0], "shrug"), (K["later"][1] + 0.3, "stand")])
+    sam.set("mouth", [(0, None), (K["answer"][0], "o"), (K["no2"][0], None)])
+    sam.set("headtilt", [(0, 0), (K["mirror"][0], 0), (K["mirror"][0] + 0.3, 7), (K["mirror"][1], 7), (K["mirror"][1] + 0.3, 0)])
+    puka2 = kid("puka", 1400, z=9, scale=0.9)
+    walk(puka2, K["answer"][0] - 0.5, K["answer"][0], 1400, 1050)
+    puka2.set("pose", [(0, "stand"), (K["answer"][0], "cheer"), (K["no2"][0], "stand")])
+    walk(puka2, K["no2"][0] + 0.3, K["no2"][1] + 0.6, 1050, 1400)
+    acts.append(puka2)
+    acts.append(pop("Puka!", K["answer"][0], K["answer"][1] + 0.3, 1050, 220, 56, PINK, 8))
     return dict(actors=acts, camera=None, sfx=[(K["intro"][0], "pop"), (K["twirl"][0] + 0.3, "sparkle"), (K["call"][0], "pop"), (K["later"][1], "boing")], title=None)
 
 
@@ -334,6 +358,12 @@ def sc_muoi(s):
     wobble(muoi, K["yum"][0], K["yum"][1], 5, 0.25)
     acts.append(pop("ngon quá!", K["yum"][0] + 0.3, K["yum"][1] + 0.5, 400, 250, 52, YEL, -8))
     acts += hearts(K["yum"][0], K["yum"][1] + 0.5, 640, 300)
+    muoi.set("pose", [(0, "stand"), (K["intro"][0], "wave"), (K["intro"][1] + 0.3, "stand"), (K["cake"][0] + 1.0, "hold"), (K["cake"][0] + 1.8, "eat"), (K["tummy"][0], "hold"), (K["tummy"][1] + 0.4, "stand")])
+    moon.set("pose", [(0, "stand"), (K["stop"][0], "point"), (K["stop"][1] + 0.4, "stand"), (K["tummy"][0], "cry"), (K["tummy"][1], "stand")])
+    moon.set("mouth", [(0, None), (K["tummy"][0] + 0.3, "o"), (K["tummy"][1], None)])
+    muoi.set("headtilt", [(0, 0), (K["yum"][0], 0), (K["yum"][0] + 0.3, 8), (K["yum"][1], -8), (K["yum"][1] + 0.3, 0)])
+    acts.append(pop("ục ục!", K["tummy"][0] + 0.3, K["tummy"][1], 640, 420, 54, BLUE, -6))
+    shake(muoi, K["tummy"][0] + 0.3, K["tummy"][0] + 1.4, 6, 0.1)
     return dict(actors=acts, camera=None, sfx=[(K["intro"][0], "pop"), (K["cake"][0] + 1.2, "swoosh"), (K["stop"][0], "boing"), (K["yum"][0], "pop")], title=None)
 
 
@@ -368,6 +398,10 @@ def sc_eric(s):
     acts.append(kaka)
     jump(eric, K["ok"][0] + 0.2, 40, 2, 0.35)
     acts.append(pop("HI HI!", K["ok"][0] + 0.3, K["ok"][1] + 0.5, 850, 260, 56, PINK, 8))
+    eric.set("pose", [(0, "stand"), (K["intro"][0], "cheer"), (K["intro"][1] + 0.5, "hold"), (K["grab"][0] + 0.6, "pull"), (K["cry"][0], "cry"), (K["ok"][0], "cheer"), (K["ok"][1] + 0.5, "hold")])
+    muoi.set("pose", [(0, "stand"), (K["grab"][0], "hold"), (K["kaka"][0] + 0.3, "shrug"), (K["ok"][0], "stand")])
+    kaka.set("pose", [(0, "stand"), (K["kaka"][0], "point"), (K["kaka"][1] + 0.5, "stand")])
+    kaka.set("mouth", [(0, None)])
     return dict(actors=acts, camera=None, sfx=[(K["intro"][0], "pop"), (K["grab"][0] + 0.6, "swoosh"), (K["cry"][0], "cry"), (K["kaka"][0], "boing"), (K["ok"][0], "ding")], title=None)
 
 
@@ -400,6 +434,8 @@ def sc_lu(s):
     lu.set("bob", [(0, 0), (K["run"][0] + 1.3, 8)]).set("bobf", 5)
     walk(moon, K["run"][0] + 1.8, K["run"][0] + 2.6, 880, 1500)
     acts.append(pop("GÂU GÂU!", K["run"][1], T, 700, 300, 64, YEL, -8))
+    moon.set("pose", [(0, "hold"), (K["nope"][1], "shrug"), (K["run"][0], "stand")])
+    moon.set("mouth", [(0, None), (K["nope"][0], "o"), (K["nope"][1], None)])
     return dict(actors=acts, camera=None, sfx=[(K["bark"][0], "bark"), (K["food"][1] + 0.4, "pop"), (K["run"][0] + 1.0, "bark"), (K["run"][1], "bark")], title=None)
 
 
@@ -441,6 +477,16 @@ def sc_plan(s):
     jump(who["eric"], K["yes"][0], 45, 2, 0.35)
     wobble(who["kaka"], K["explain"][0], K["explain"][1], 6, 0.25)
     acts.append(pop("Ông Địa!", K["explain"][0] + 0.3, K["explain"][1] + 0.3, 1120, 180, 54, YEL, 6))
+    who["kaka"].set("pose", [(0, "stand"), (K["plan"][0] + 0.4, "lion"), (K["ongdia"][0], "point"), (K["explain"][0], "cheer"), (K["audience"][0], "point"), (K["audience"][1] + 0.4, "stand")])
+    who["sam"].set("pose", [(0, "stand"), (K["tail"][0], "cheer"), (K["tail"][0] + 0.9, "hold")])
+    who["puka"].set("pose", [(0, "stand"), (K["tail"][0] + 0.15, "cheer"), (K["tail"][0] + 1.0, "hold")])
+    who["moon"].set("pose", [(0, "stand"), (K["drum"][0] + 0.3, "drum"), (K["drum"][1] + 0.5, "stand")])
+    who["muoi"].set("pose", [(0, "stand"), (K["drum"][0] + 1.2, "hold"), (K["cakeagain"][0], "cheer"), (K["cakeagain"][0] + 0.8, "eat")])
+    who["eric"].set("pose", [(0, "stand"), (K["what"][0], "shrug"), (K["explain"][0] + 1.0, "fan"), (K["yes"][0], "cheer"), (K["yes"][1] + 0.4, "fan")])
+    who["eric"].set("mouth", [(0, None), (K["what"][0], "o"), (K["what"][1], None)])
+    lu.set("headtilt", [(0, 0), (K["luask"][0], 0), (K["luask"][0] + 0.3, 14), (K["luask"][1], 14), (K["luask"][1] + 0.3, 0)])
+    jump(lu, K["luask"][0], 25, 2, 0.35)
+    acts.append(pop("khán giả!", K["audience"][0] + 1.0, K["audience"][1] + 0.6, 1230, 330, 48, YEL, 6))
     return dict(actors=acts, camera=None, sfx=[(K["plan"][0] + 0.4, "sparkle"), (K["tail"][0], "boing"), (K["drum"][0] + 0.3, "pop"), (K["cakeagain"][0], "pop"), (K["explain"][0] + 0.5, "sparkle"), (K["yes"][0], "ding")], title=None)
 
 
@@ -510,6 +556,15 @@ def sc_practice(s):
     eric.set("emote", [(0, None), (K["cry"][0], "cry"), (K["again"][1] - 0.3, None), (K["again"][1], "stars")])
     moon.set("x", [(0, 1120), (K["again"][0] - 0.3, 1120), (K["again"][0] + 0.4, 450)])
     moon.set("emote", [(0, None), (K["again"][0], "hearts"), (T, None)])
+    kaka.set("pose", [(0, "lion"), (tf, "cry"), (K["again"][0] + 0.8, "lion")])
+    puka.set("pose", [(0, "hold"), (K["slow"][0], "point"), (K["slow"][1] + 0.3, "hold")])
+    sam.set("pose", [(0, "hold"), (K["hair"][0], "cry"), (K["hair"][1] + 0.3, "hold")])
+    moon.set("pose", [(0, "stand"), (st, "drum"), (K["fall"][0], "stand"), (K["again"][0], "hug")])
+    eric.set("pose", [(0, "fan"), (K["cry"][0], "cry"), (K["again"][1], "cheer")])
+    muoi.set("pose", [(0, "eat"), (K["eat2"][0], "eat"), (K["drum"][0], "hold")])
+    muoi.set("x", [(0, 130), (K["eat2"][0], 130), (K["eat2"][0] + 0.8, 200), (K["drum"][0], 130)])
+    cake.set("x", [(0, 160), (K["eat2"][0] + 0.8, 160), (K["eat2"][0] + 1.4, 230)]).set("y", [(0, FLOOR - 200), (K["eat2"][0] + 1.4, FLOOR - 250)])
+    cake.set("scale", [(0, 1.1), (K["eat2"][1], 1.1), (K["eat2"][1] + 0.5, 0.6)])
     return dict(actors=acts, camera=None,
                 sfx=[(st, "liondrum"), (jt, "boing"), (K["split"][0] + 0.3, "swoosh"), (K["fall"][0] - 0.8, "bark"), (tf, "boing"), (K["cry"][0], "cry"), (K["again"][1], "ding")], title=None)
 
@@ -623,6 +678,12 @@ def sc_fight(s):
     acts.append(fan2)
     jump(eric, K["share"][0], 35, 2, 0.4)
     acts += hearts(K["share"][0] + 0.3, T, 980, 260)
+    eric.set("pose", [(0, "hold"), (K["no"][0], "pull"), (K["cry"][0], "cry"), (K["lu"][0] + 1.0, "stand"), (K["stop"][0] + 0.8, "hold"), (K["share"][0], "cheer")])
+    muoi.set("pose", [(0, "stand"), (K["grab"][0], "point"), (K["no"][0], "pull"), (K["lu"][0] + 1.0, "stand"), (K["sorry"][0], "shrug"), (K["sorry"][1] + 0.3, "stand"), (K["share"][0], "hug")])
+    for a_ in (eric, muoi):
+        a_.set("mouth", [(0, None), (K["o"][0], "o"), (K["o"][1] + 0.3, None)])
+    puka.set("pose", [(0, "stand"), (K["laugh"][0], "cheer"), (K["laugh"][1] + 0.4, "stand")])
+    kaka.set("pose", [(0, "stand"), (tf, "cheer"), (tf + 0.4, "stand")])
     return dict(actors=acts, camera=None,
                 sfx=[(K["grab"][0], "swoosh"), (K["no"][0], "boing"), (K["cry"][0], "cry"), (K["lu"][0] + 0.2, "swoosh"), (K["lu"][0] + 0.8, "bark"),
                      (c0, "bark"), (tf + 0.2, "boing"), (K["laugh"][0], "laugh"), (K["stop"][0] + 0.5, "pop"), (K["share"][0], "ding")], title=None)
@@ -707,6 +768,20 @@ def sc_midautumn(s):
     acts.append(pop("HOAN HÔ!", K["cheer"][0] + 0.2, K["cheer"][1] + 0.8, 640, 150, 84, YEL, -5))
     acts += stars(K["cheer"][0] + 0.2, K["cheer"][1] + 0.8, 640, 250, 8)
     cam = Track([(0, (640, 360, 1.0)), (l0, (640, 360, 1.0)), (l0 + 1.0, (600, 420, 1.25)), (K["ongdia"][0], (600, 420, 1.25)), (K["ongdia"][0] + 0.8, (640, 360, 1.0))])
+    kaka.set("pose", [(0, "stand"), (l0 - 0.3, "lion")])
+    puka.set("pose", [(0, "hold")]).set("mouth", [(0, None)])
+    sam.set("pose", [(0, "hold")])
+    moon.set("pose", [(0, "stand"), (d0, "drum"), (d1, "cheer")])
+    eric.set("pose", [(0, "stand"), (e0, "fan"), (K["cheer"][0], "cheer")])
+    muoi.set("pose", [(0, "hold"), (K["reward"][0], "point"), (K["reward"][0] + 1.4, "hold"), (K["cheer"][0], "cheer")])
+    # thi nhảy: Eric và Kaka đối mặt, nhảy cao hơn
+    eric.set("x", [(t_, v) for t_, v in eric.tracks["x"].keys if t_ < K["battle1"][0]] + [(K["battle1"][0], 420), (K["battle"][1], 420)])
+    kaka.set("x", [(t_, v) for t_, v in kaka.tracks["x"].keys if t_ < K["battle1"][0]] + [(K["battle1"][0], 620), (K["battle"][1], 620)])
+    for k2 in range(8):
+        jump(eric, K["battle"][0] + k2 * 0.4, 70, 1, 0.4)
+        jump(kaka, K["battle"][0] + 0.2 + k2 * 0.4, 75, 1, 0.4)
+    spin(eric, K["battle"][0] + 0.8, 3, 0.2)
+    acts.append(pop("thi nhảy!", K["battle"][0] + 0.2, K["battle"][1], 520, 150, 56, YEL, -6))
     return dict(actors=acts, camera=cam,
                 sfx=[(d0, "liondrum"), (d0 + 4.5, "liondrum"), (d0 + 9.0, "liondrum"), (d0 + 13.5, "liondrum"), (l0, "boing"), (K["ongdia"][0], "laugh"),
                      (K["reward"][0] + 1.6, "pop"), (K["lu"][0], "bark"), (K["clap"][0] + 0.4, "clap"), (K["cheer"][0], "sparkle")], title=None)
@@ -734,6 +809,10 @@ def sc_ending(s):
                       scale=[(K["moral"][0] + 1.0, 0.2), (K["moral"][0] + 1.35, 1.1), (K["moral"][0] + 1.5, 1.0)], rot=-3))
     acts += hearts(K["cheer"][0], T, 640, 300, 5)
     cam = Track([(0, (640, 400, 1.0)), (K["moral"][0], (640, 430, 1.2)), (K["cheer"][0], (640, 360, 1.0))])
+    who["muoi"].set("pose", [(0, "hold"), (K["give"][0] + 0.4, "point"), (K["thanks"][0], "stand"), (K["cheer"][0], "cheer")])
+    who["eric"].set("pose", [(0, "stand"), (K["give"][0] + 1.0, "hold"), (K["thanks"][0], "cheer"), (K["thanks"][1] + 0.5, "hold"), (K["cheer"][0], "cheer")])
+    for n_ in ("kaka", "puka", "moon", "sam"):
+        who[n_].set("pose", [(0, "stand"), (K["cheer"][0], "cheer")])
     return dict(actors=acts, camera=cam, sfx=[(K["give"][0] + 0.4, "pop"), (K["thanks"][0], "ding"), (K["love"][0] + 0.6, "ding"), (K["moral"][0] + 1.0, "sparkle"), (K["cheer"][0], "sparkle"), (K["lu"][0], "bark")],
                 title=None, no_bubble=True)
 
@@ -743,8 +822,9 @@ def sc_outro(s):
     acts = []
     door_y = 445
     for i, (n, x) in enumerate((("kaka", 520), ("puka", 568), ("moon", 616), ("sam", 664), ("muoi", 712), ("eric", 760))):
-        a = kid(n, x, door_y, z=10 + i, scale=0.33, bob=3, bobf=2.5 + i * 0.2)
+        a = kid(n, x, door_y, z=10 + i, scale=0.33, bob=3, bobf=2.5 + i * 0.2, pose="wave")
         jump(a, K["bye"][0] + i * 0.08, 25, 2, 0.4)
+        a.set("pose", [(0, "wave"), (K["bye"][0], "cheer")])
         acts.append(a)
     acts.append(kid("lu", 810, door_y + 2, z=20, scale=0.33, bob=4, bobf=4))
     acts.append(Actor("text", z=60, text=[(0, ""), (K["end"][0] + 0.1, "HẾT"), (T, "")], x=640, y=130, size=96, color=YEL,

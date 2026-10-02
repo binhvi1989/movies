@@ -67,10 +67,10 @@ def render_frame(sc, bg, built, t):
     states.sort(key=lambda p: (p[0].z, p[1]["y"]))
     speaker = None
     for a, st in states:
-        if speaking and a.kind in ("kid", "lu", "cut") and (a.name == speaking or (a.kind == "lu" and speaking == "lu")) and st["visible"]:
+        if speaking and a.kind in ("kid", "lu", "cut", "puppet") and (a.name == speaking or (a.kind == "lu" and speaking == "lu")) and st["visible"]:
             st = dict(st, talk=True)
             speaker = (a, st)
-        if speaking == "all" and a.kind in ("kid", "lu", "cut") and st["visible"]:
+        if speaking == "all" and a.kind in ("kid", "lu", "cut", "puppet") and st["visible"]:
             st = dict(st, talk=True)
         anim.draw_actor(frame, a, st, t)
     # bong bóng thoại tự động phía trên đầu người nói

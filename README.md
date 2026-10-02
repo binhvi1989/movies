@@ -1,8 +1,10 @@
 # Nhà Mình Vui Trung Thu
 
-Phim hoạt hình ngắn (~3 phút rưỡi) cho trẻ em về một gia đình sáu anh em và chú cún Lu chuẩn bị múa lân
-Trung thu. Nhân vật là **đúng chân dung do người dùng cung cấp** (assets/refs), được tách nền thành hình cắt dán
-(assets/cutouts) và chuyển động theo kiểu 2.5D: đi, nhún, nhảy, nghiêng, xoay, bóng đổ mềm, camera phóng gần.
+Phim hoạt hình ngắn (~4 phút) cho trẻ em về một gia đình sáu anh em và chú cún Lu chuẩn bị múa lân
+Trung thu. Nhân vật là **đúng chân dung do người dùng cung cấp** (assets/refs), được tách nền (assets/cutouts)
+rồi dựng thành **rối khớp** (src/puppet.py): đầu, thân, hai tay, hai chân tách riêng với khớp xoay ở cổ, vai, hông;
+tay chân tự vung khi đi, tay giơ/vẫy/che mặt theo tư thế, mắt chớp, miệng mở theo lời nói, đầu nghiêng, bóng đổ mềm,
+camera phóng gần. Chuyển động có chiều sâu kiểu 2.5D (không phải mô hình 3D thật).
 Có người dẫn chuyện, lồng tiếng riêng từng nhân vật (giọng nam/nữ phân biệt bằng cao độ), biểu cảm vẽ thêm
 (khóc, giận, toát mồ hôi, tim, nốt nhạc) và phụ đề màu theo người nói. Toàn bộ dựng offline bằng Python + Pillow + ffmpeg.
 
@@ -37,11 +39,12 @@ từ ngữ miền Nam (ba má, hông, nha, dữ lắm, thiệt hông…).
 ## Cấu trúc
 
 ```
-src/story.py        kịch bản: 14 cảnh, 86 câu (dẫn chuyện + thoại từng nhân vật, có khoá thời gian)
+src/story.py        kịch bản: 14 cảnh, 98 câu (dẫn chuyện + thoại từng nhân vật, có khoá thời gian)
 src/cutout.py       tách nền chân dung -> assets/cutouts (ước lượng nền bậc hai, lấp lỗ, mặt nạ hình dáng cho Lu)
 src/characters.py   đạo cụ vẽ bằng Pillow (đầu lân, đuôi lân, trống, quạt, mặt nạ Ông Địa, lồng đèn, bánh trung thu...)
 src/backgrounds.py  phông nền: trước nhà (chiều/tối), hành lang kệ giày, phòng khách sofa xanh, phòng ngủ, sân Trung thu
-src/anim.py         bộ máy keyframe, nhân vật cắt dán + bóng đổ + biểu cảm, bong bóng thoại, phụ đề, camera
+src/puppet.py       rối khớp từ chân dung: tách bộ phận bằng mặt nạ màu da, khớp xoay, tư thế (wave, cheer, lion, drum, fan, cry, hold...), chớp mắt, khẩu hình
+src/anim.py         bộ máy keyframe, nhân vật rối + bóng đổ + biểu cảm, bong bóng thoại, phụ đề, camera
 src/scenes.py       biên đạo 14 cảnh (giới thiệu, lên kế hoạch, tập lân, giành quạt, đêm Trung thu, kết) bám theo mốc câu thoại
 src/tts.py          tạo giọng thuyết minh offline (sherpa-onnx + Piper)
 src/timeline.py     tính mốc thời gian theo độ dài từng câu

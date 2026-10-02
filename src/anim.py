@@ -5,6 +5,7 @@ import math
 from PIL import Image, ImageDraw, ImageFont
 
 import characters as ch
+import puppet
 
 W, H = 1280, 720
 KID_SCALE = 1.45   # phóng to nhân vật so với sprite gốc
@@ -51,7 +52,8 @@ class Track:
 DEFAULTS = dict(x=640, y=690, scale=1.0, pose="stand", expr="smile", flip=False, look=0.0, alpha=1.0,
                 rot=0.0, bob=0.0, bobf=2.0, talk=False, item=None, walkspeed=2.2, visible=True,
                 text="", size=48, color=(255, 255, 255), tail=None, sway=0.0,
-                squash=1.0, ground=None, emote=None, shadow=True)
+                squash=1.0, ground=None, emote=None, shadow=True,
+                mouth=None, headtilt=0.0, turn=0.0, arm_l=None, arm_r=None, armwob=0.0, _walking=0.0)
 
 # ---- nhân vật cắt dán từ chân dung (assets/cutouts/<name>.png), neo giữa bàn chân
 import os
@@ -91,7 +93,7 @@ class Actor:
 
     def set(self, key, val):
         if isinstance(val, list):
-            self.tracks[key] = Track(val, discrete=key in ("pose", "expr", "flip", "talk", "item", "visible", "text", "color", "tail", "emote", "shadow"))
+            self.tracks[key] = Track(val, discrete=key in ("pose", "expr", "flip", "talk", "item", "visible", "text", "color", "tail", "emote", "shadow", "mouth"))
         else:
             self.tracks[key] = Track([(0, val)])
         return self
@@ -207,6 +209,25 @@ def actor_image(actor, st, t):
         img = ch.lu(st["pose"], expr, round(phase * 6) / 6, bool(st["flip"]), st["item"])
     elif kind == "prop":
         img = ch.prop(actor.name)
+    elif kind == "puppet":
+        sq = st["squash"]
+        img, (ax, ay) = puppet.render(actor.name, st, t)
+        target_h = CUT_BASE_H * CUT_REL_H.get(actor.name, 0.9) * st["scale"]
+        k = target_h / puppet.WORK_H
+        nw, nh = max(2, int(img.width * k / math.sqrt(sq))), max(2, int(img.height * k * sq))
+        img = img.resize((nw, nh), Image.LANCZOS)
+        ax, ay = ax * k / math.sqrt(sq), ay * k * sq
+        if st["flip"]:
+            img = img.transpose(Image.FLIP_LEFT_RIGHT)
+            ax = img.width - ax
+        if abs(st["rot"] + sway) > 0.3:
+            img2 = img.rotate(st["rot"] + sway, resample=Image.BICUBIC, expand=True, center=(ax, ay))
+            ax += (img2.width - img.width) / 2
+            ay += (img2.height - img.height) / 2
+            img = img2
+        x = int(st["x"] - ax)
+        y = int(st["y"] + bob - ay)
+        return img, x, y
     elif kind == "cut":
         sq = st["squash"]
         if st["talk"]:
@@ -236,8 +257,15 @@ def draw_actor(frame, actor, st, t):
         if st["text"]:
             draw_pop_text(frame, st["text"], st["x"], st["y"], st["size"], st["color"], st["rot"], st["alpha"], st["scale"])
         return
+    if actor.kind == "puppet":
+        st = dict(st)
+        x0, x1 = actor.state(max(0, t - 0.06))["x"], actor.state(t + 0.06)["x"]
+        speed = abs(x1 - x0) / 0.12
+        st["_walking"] = min(1.0, speed / 160.0) if speed > 30 else 0.0
+        if st["emote"] == "cry" and not st["mouth"]:
+            st["mouth"] = "cry"
     img, x, y = actor_image(actor, st, t)
-    if actor.kind in ("cut", "lu") and st["shadow"]:
+    if actor.kind in ("cut", "lu", "puppet") and st["shadow"]:
         draw_shadow(frame, st["x"], st["ground"] if st["ground"] is not None else st["y"], img.width * 0.55,
                     lift=max(0.0, (st["ground"] if st["ground"] is not None else st["y"]) - (st["y"] + (st["bob"] * math.sin(2 * math.pi * st["bobf"] * t) if st["bob"] else 0))))
     if st["alpha"] < 1:
@@ -245,7 +273,7 @@ def draw_actor(frame, actor, st, t):
         img = img.copy()
         img.putalpha(a)
     frame.alpha_composite(img, (x, y))
-    if actor.kind == "cut" and st["emote"]:
+    if actor.kind in ("cut", "puppet") and st["emote"]:
         draw_emote(frame, st["emote"], x + img.width / 2, y, img.width, img.height, t)
 
 
